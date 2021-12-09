@@ -1,4 +1,10 @@
-...
+import requests
+import telegram
+import telegram.ext
+import time
+
+from pprint import pprint
+from dotenv import load_dotenv
 
 load_dotenv()
 
