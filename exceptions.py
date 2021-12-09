@@ -1,0 +1,2 @@
+class responseNotInListFormat(Exception):
+    pass
