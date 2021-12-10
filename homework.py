@@ -2,6 +2,7 @@ import os
 
 import requests
 import telegram
+from telegram import message
 import telegram.ext
 import time
 import exceptions
@@ -35,6 +36,8 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
+
 
 def send_message(bot, message):
     bot.send_message(TELEGRAM_CHAT_ID, message)
@@ -47,15 +50,20 @@ def get_api_answer(current_timestamp):
     try:
         api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except Exception as error:
-        logging.error(f'Эндпоинт {ENDPOINT} не доступен')
+        message = f'{error} Эндпоинт {ENDPOINT} не доступен'
+        logging.error(message)
+        send_message(bot, message)
     return api_answer.json()
 
 
 def check_response(response):
+    
     try:
         homework = response.get('homeworks')
     except Exception as error:
-        logging.error('В ответе API неожидаемый формат данных')
+        message = f'{error} В ответе API неожидаемый формат данных'
+        logging.error(message)
+        send_message(bot, message)
     return homework
 
 
@@ -64,15 +72,17 @@ def parse_status(homework):
         homework_name = homework[0].get('homework_name')
         homework_status = homework[0].get('status')
     except Exception as error:
-        logging.error(
-            f'Отсутствуют ожидаемые ключи в ответе API'
-        )
+        message = f'{error} Отсутствуют ожидаемые ключи в ответе API'
+        logging.error(message)
+        send_message(bot, message)
 
     if homework_status != hw_status.status:
         try:
             homework_status in HOMEWORK_STATUSES
         except Exception as error:
-            logging.error('Недокументированный статус домашки')
+            message = f'{error} Недокументированный статус домашки'
+            send_message(bot, message)
+            logging.error(message)
             
         verdict = HOMEWORK_STATUSES[homework_status]
         hw_status.status = homework_status
@@ -92,7 +102,6 @@ def main():
     """Основная логика работы бота."""
     try:
         check_tokens()==True
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
     except Exception as error:
         logging.critical('Ошибка при чтении токена(-ов)')   
     current_timestamp = int(time.time())
@@ -106,6 +115,7 @@ def main():
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
+            send_message(bot, message)
             logging.error(message)
             time.sleep(RETRY_TIME)
 
