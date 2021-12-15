@@ -26,7 +26,7 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
-RETRY_TIME = 60
+RETRY_TIME = 500
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
