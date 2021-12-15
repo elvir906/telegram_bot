@@ -24,9 +24,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-BOT = telegram.Bot(token=TELEGRAM_TOKEN)
-
-RETRY_TIME = 500
+RETRY_TIME = 60
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -54,7 +52,6 @@ def get_api_answer(current_timestamp):
     api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
     if api_answer.status_code != 200:
         logging.error(f'Эндпоинт {ENDPOINT} недоступен')
-        send_message(BOT, f'Эндпоинт {ENDPOINT} недоступен')
         raise exceptions.requestCausedError500
     return api_answer.json()
 
@@ -70,7 +67,6 @@ def check_response(response):
             hw = response.get('homeworks')
             homework = hw[0]
     else:
-        send_message(BOT, 'Отсутствуют ожидаемые ключи в ответе API')
         logging.error('Отсутствуют ожидаемые ключи в ответе API')
         raise exceptions.dictionaryIsEempty
     return homework
@@ -95,7 +91,6 @@ def parse_status(homework):
                     f'работы "{homework_name}". {verdict}')
             return text
         else:
-            send_message(BOT, 'Обнаружен незадокументированный статус дз')
             logging.error('Обнаружен незадокументированный статус дз')
             raise KeyError
     else:
