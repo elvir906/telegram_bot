@@ -57,18 +57,30 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Получаем домашние работы с ответа api."""
-    hw = response.get('homeworks')
-    if hw[0] != []:
-        homework = hw[0]
-        return homework
+    if response != {}:
+        if type(response) != dict:
+            response = dict(response)
+            hw = response.get('homeworks')
+            homework = hw[0]
+        else:
+            hw = response.get('homeworks')
+            homework = hw[0]
     else:
         raise exceptions.dictionaryIsEempty
+    return homework
 
 
 def parse_status(homework):
     """Тут проверяется и определяется статус д/з."""
-    homework_name = homework.get('homework_name')
-    homework_status = homework.get('status')
+    current_timestamp = int(time.time()) - 3888000
+    timestamp = current_timestamp or int(time.time()) - 3888000
+    if type(homework) != dict:
+        homework = {'homework': homework[0], 'current_date': timestamp}
+        homework_name = homework.get('homework_name')
+        homework_status = homework.get('status')
+    else:
+        homework_name = homework.get('homework_name')
+        homework_status = homework.get('status')
     if homework_status != hw_status.status:
         if (homework_status in HOMEWORK_STATUSES) and (homework_name):
             verdict = HOMEWORK_STATUSES[homework_status]
@@ -77,7 +89,8 @@ def parse_status(homework):
                     f'работы "{homework_name}". {verdict}')
             return text
         else:
-            raise exceptions.UnexpectedStaus
+            logging.error('обнаружен незадокументированный статус дз')
+            raise KeyError
     else:
         logging.debug(
             f'Статус проверки {homework_status} домашней '
@@ -97,7 +110,7 @@ def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time()) - 3888000
-    while check_tokens is True:
+    while check_tokens:
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)

@@ -54,6 +54,7 @@ def get_api_answer(current_timestamp):
         raise exceptions.requestCausedError500
     return api_answer.json()
 
+
 def check_response(response):
     """Получаем домашние работы с ответа api."""
     hw = response.get('homeworks')
@@ -72,3 +73,6 @@ b = check_response(a)
 print(b)
 parse_status(b)
 
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
+
+send_message(bot, b)

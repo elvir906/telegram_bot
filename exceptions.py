@@ -1,4 +1,8 @@
-class responseNotInListFormat(Exception):
+class homeworkNotInListFormat(Exception):
+    pass
+
+
+class responseNotInDictFormat(Exception):
     pass
 
 
