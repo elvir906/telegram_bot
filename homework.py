@@ -24,7 +24,9 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 600
+BOT = telegram.Bot(token=TELEGRAM_TOKEN)
+
+RETRY_TIME = 60
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -51,6 +53,8 @@ def get_api_answer(current_timestamp):
     params = {'from_date': timestamp}
     api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
     if api_answer.status_code != 200:
+        logging.error(f'Эндпоинт {ENDPOINT} недоступен')
+        send_message(BOT, f'Эндпоинт {ENDPOINT} недоступен')
         raise exceptions.requestCausedError500
     return api_answer.json()
 
@@ -66,6 +70,8 @@ def check_response(response):
             hw = response.get('homeworks')
             homework = hw[0]
     else:
+        send_message(BOT, 'Отсутствуют ожидаемые ключи в ответе API')
+        logging.error('Отсутствуют ожидаемые ключи в ответе API')
         raise exceptions.dictionaryIsEempty
     return homework
 
@@ -89,7 +95,8 @@ def parse_status(homework):
                     f'работы "{homework_name}". {verdict}')
             return text
         else:
-            logging.error('обнаружен незадокументированный статус дз')
+            send_message(BOT, 'Обнаружен незадокументированный статус дз')
+            logging.error('Обнаружен незадокументированный статус дз')
             raise KeyError
     else:
         logging.debug(
@@ -103,6 +110,15 @@ def check_tokens():
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         return True
     else:
+        if not PRACTICUM_TOKEN:
+            logging.critical('Отсутствует обязательная '
+                             f'переменная окружения {PRACTICUM_TOKEN}')
+        if not TELEGRAM_TOKEN:
+            logging.critical('Отсутствует обязательная '
+                             f'переменная окружения {TELEGRAM_TOKEN}')
+        if not TELEGRAM_CHAT_ID:
+            logging.critical('Отсутствует обязательная '
+                             f'переменная окружения {TELEGRAM_CHAT_ID}')
         return False
 
 
@@ -116,7 +132,8 @@ def main():
             homework = check_response(response)
             message = parse_status(homework)
             send_message(bot, message)
-            current_timestamp = int(time.time())
+            logging.info(f'Бот отправил сообщение {message}')
+            current_timestamp = int(time.time()) - 3888000
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
