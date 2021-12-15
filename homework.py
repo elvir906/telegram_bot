@@ -61,7 +61,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Получаем домашние работы с ответа api."""
-    if response != {}:
+    if len(response) != 0:
         if type(response) != dict:
             response = dict(response)
             hw = response.get('homeworks')
