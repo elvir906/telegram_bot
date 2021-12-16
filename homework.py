@@ -4,7 +4,6 @@ import requests
 import telegram
 import telegram.ext
 import time
-import hw_status
 import logging
 import exceptions
 
@@ -24,10 +23,11 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 60
+HW_STATUS = []
+MAGICAL_CONST = 3888000
+RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-
 
 HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -47,13 +47,18 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Здесь мы получаем ответ от api и преобразовываем его в json-формат."""
-    timestamp = current_timestamp or int(time.time()) - 3888000
+    timestamp = current_timestamp or int(time.time()) - MAGICAL_CONST
     params = {'from_date': timestamp}
     api_answer = requests.get(ENDPOINT, headers=HEADERS, params=params)
     if api_answer.status_code != 200:
         logging.error(f'Эндпоинт {ENDPOINT} недоступен')
         raise exceptions.requestCausedError500
-    return api_answer.json()
+    try:
+        convertaition_result = api_answer.json()
+    except Exception as error:
+        logging.error(f'Произошла ошибка {error} при попытке '
+                      'конвертации ответа API в json-формат')
+    return convertaition_result
 
 
 def check_response(response):
@@ -61,11 +66,8 @@ def check_response(response):
     if len(response) != 0:
         if type(response) != dict:
             response = dict(response)
-            hw = response.get('homeworks')
-            homework = hw[0]
-        else:
-            hw = response.get('homeworks')
-            homework = hw[0]
+        hw = response.get('homeworks')
+        homework = hw[0]
     else:
         logging.error('Отсутствуют ожидаемые ключи в ответе API')
         raise exceptions.dictionaryIsEempty
@@ -74,19 +76,16 @@ def check_response(response):
 
 def parse_status(homework):
     """Тут проверяется и определяется статус д/з."""
-    current_timestamp = int(time.time()) - 3888000
-    timestamp = current_timestamp or int(time.time()) - 3888000
+    current_timestamp = int(time.time()) - MAGICAL_CONST
+    timestamp = current_timestamp or int(time.time()) - MAGICAL_CONST
     if type(homework) != dict:
         homework = {'homework': homework[0], 'current_date': timestamp}
-        homework_name = homework.get('homework_name')
-        homework_status = homework.get('status')
-    else:
-        homework_name = homework.get('homework_name')
-        homework_status = homework.get('status')
-    if homework_status != hw_status.status:
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
+    if homework_status not in HW_STATUS:
         if (homework_status in HOMEWORK_STATUSES) and (homework_name):
             verdict = HOMEWORK_STATUSES[homework_status]
-            hw_status.status = homework_status
+            HW_STATUS.append(homework_status)
             text = ('Изменился статус проверки '
                     f'работы "{homework_name}". {verdict}')
             return text
@@ -105,36 +104,28 @@ def check_tokens():
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         return True
     else:
-        if not PRACTICUM_TOKEN:
-            logging.critical('Отсутствует обязательная '
-                             f'переменная окружения {PRACTICUM_TOKEN}')
-        if not TELEGRAM_TOKEN:
-            logging.critical('Отсутствует обязательная '
-                             f'переменная окружения {TELEGRAM_TOKEN}')
-        if not TELEGRAM_CHAT_ID:
-            logging.critical('Отсутствует обязательная '
-                             f'переменная окружения {TELEGRAM_CHAT_ID}')
-        return False
+        logging.critical('Не обнаружен один или несколько токенов')
+        return not (PRACTICUM_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN)
 
 
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) - 3888000
+    current_timestamp = int(time.time()) - MAGICAL_CONST
     while check_tokens:
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             message = parse_status(homework)
-            send_message(bot, message)
             logging.info(f'Бот отправил сообщение {message}')
-            current_timestamp = int(time.time()) - 3888000
+            current_timestamp = int(time.time()) - MAGICAL_CONST
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
             logging.error(message)
             time.sleep(RETRY_TIME)
+        else:
+            send_message(bot, message)
 
 
 if __name__ == '__main__':

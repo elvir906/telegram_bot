@@ -1,30 +1,8 @@
-class homeworkNotInListFormat(Exception):
-    pass
-
-
-class responseNotInDictFormat(Exception):
-    pass
-
-
-class someTokensAreNotAvailable(Exception):
-    pass
-
-
-class endpointIsUnavailable(Exception):
-    pass
-
-
-class expectedKeysMissing(Exception):
-    pass
-
-
-class UnexpectedStaus(Exception):
-    pass
-
-
 class requestCausedError500(Exception):
-    pass
+    def __init__(self, message='Эндпоинт недоступен'):
+        self.message = message
 
 
 class dictionaryIsEempty(Exception):
-    pass
+    def __init__(self, message='Ответ API не содержит нужных ключей'):
+        self.message = message
