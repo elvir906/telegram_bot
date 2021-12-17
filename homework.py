@@ -1,4 +1,5 @@
 import os
+from boto.s3.bucket import S3Permissions
 
 import requests
 import telegram
@@ -7,9 +8,11 @@ import time
 import logging
 import exceptions
 
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 
-load_dotenv()
+#load_dotenv()
+
+from boto.s3.connection import S3Connection
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,11 +20,18 @@ logging.basicConfig(
     filemode='w',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
 )
+s3 = S3Connection(os.environ['PRACTICUM_TOKEN'],
+                  os.environ['TELEGRAM_TOKEN'],
+                  os.environ['TELEGRAM_CHAT_ID'])
+
+PRACTICUM_TOKEN = os.environ('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN = os.environ('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.environ('TELEGRAM_CHAT_ID')
 
 
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+# PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+# TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+# TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 HW_STATUS = []
 FORTYFIVE_DAYS_TIME = 3888000
