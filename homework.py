@@ -41,7 +41,7 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.info(f'Сообщение {message} отправлено в Telegram')
     except Exception as error:
-        logging.error(f'{error}. Бот не доступен')
+        logging.error(f'Ошибка {error}. Бот не доступен')
 
 
 def get_api_answer(current_timestamp):
@@ -68,13 +68,13 @@ def check_response(response):
         hw = response.get('homeworks')
         homework = hw[0]
     else:
-        logging.error('Отсутствуют ожидаемые ключи в ответе API')
+        logging.error('Отсутствуют ожидаемые ключ (ключи) в ответе API')
         raise exceptions.dictionaryIsEempty
     return homework
 
 
 def parse_status(homework):
-    """Тут проверяется и определяется статус д/з."""
+    """Тут проверяется и определяется статус домашки."""
     current_timestamp = int(time.time()) - FORTYFIVE_DAYS_TIME
     timestamp = current_timestamp or int(time.time()) - FORTYFIVE_DAYS_TIME
     if type(homework) != dict:
